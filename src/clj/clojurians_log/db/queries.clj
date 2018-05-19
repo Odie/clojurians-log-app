@@ -95,3 +95,24 @@
          [?user :user/name ?username]]
        db
        names))
+
+(defn message-by-ts [db ts]
+  (d/q '[:find (pull ?msg [*]) .
+         :in $ ?ts
+         :where
+         [?msg :message/ts ?ts]]
+       db
+       ts))
+
+(defn thread-messages
+  "Retrieve all child messages for the given parent threads"
+  [db parent-tss]
+  (->> (d/q {:find [pull-message-pattern]
+             :in '[$ [?parent-ts ...]]
+             :where '[[?msg  :message/thread-ts ?parent-ts]]
+             }
+            db
+            parent-tss)
+
+       (map assoc-inst)
+       (sort-by :message/inst)))
